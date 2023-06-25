@@ -21,6 +21,7 @@ struct Instruction{
     unsigned opcode, imm, shamt, rs1, rs2, rd, funct3, funct7;
     INSTRUCTION_TYPE ins_type;
     INSTRUCTION_CLASS ins_class;
+    Instruction() = default;
     explicit Instruction(const unsigned &insBits) { instructionBits = insBits; }
 };
 
