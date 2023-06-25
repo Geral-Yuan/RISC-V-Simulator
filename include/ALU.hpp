@@ -4,6 +4,8 @@
 enum CalOp{
     AddOp,
     SubOp,
+    LessOp,
+    ULessOp,
     LShiftOp,
     RshiftOp,
     AndOp,
