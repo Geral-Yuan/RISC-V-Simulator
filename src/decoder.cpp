@@ -9,7 +9,7 @@ void Decoder::decode(Instruction &ins){
     ins.rd = (ins.instructionBits >> 7) & 0x1fu;
     ins.funct3 = (ins.instructionBits >> 12) & 0x07u;
     ins.rs1 = (ins.instructionBits >> 15) & 0x1fu;
-    ins.rs2 = ins.shamt = (ins.instructionBits >> 20) & 0x1fu;
+    ins.rs2 = (ins.instructionBits >> 20) & 0x1fu;
     // instruction can't match anyone is regarded as ILLEGAL for debugging
     if (ins.opcode == 0x37u || ins.opcode == 0x17u){
         ins.ins_class = U_type;
@@ -48,11 +48,12 @@ void Decoder::decode(Instruction &ins){
             ins.ins_type = ILLEGAL;
         }
     }else if (ins.opcode == 0x67u || ins.opcode == 0x3u || ins.opcode == 0x13u){
-        ins.ins_class = I_type;
         ins.imm = ins.instructionBits >> 20;
         if (ins.opcode == 0x67u){
+            ins.ins_class = I_type1;
             ins.ins_type = JALR;
         }else if (ins.opcode == 0x3u){
+            ins.ins_class = I_type2;
             switch (ins.funct3){
             case 0x0u:
                 ins.ins_type = LB;
@@ -73,6 +74,7 @@ void Decoder::decode(Instruction &ins){
                 ins.ins_type = ILLEGAL;
             }
         }else{
+            ins.ins_class = I_type3;
             switch (ins.funct3){
             case 0x0u:
                 ins.ins_type = ADDI;
