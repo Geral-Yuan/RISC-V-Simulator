@@ -8,6 +8,7 @@ enum CalOp{
     ULessOp,
     LShiftOp,
     RshiftOp,
+    RshiftAop,
     AndOp,
     OrOp,
     XorOp
