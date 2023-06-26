@@ -7,9 +7,9 @@ unsigned ALU::calculate(unsigned operand1, unsigned operand2, CalOp calop){
         case SubOp:
             return operand1 - operand2;
         case LessOp:
-            return operand1 < operand2;
-        case ULessOp:
             return (signed)operand1 < (signed)operand2;
+        case ULessOp:
+            return operand1 < operand2;
         case LShiftOp:
             return operand1 << (operand2 & 0x1fu);
         case RshiftOp:

@@ -88,7 +88,10 @@ void CPU::debugRun(){
                         jump = (gprs.getVal(ins.rs1) >= gprs.getVal(ins.rs2));
                         break;
                 }
-                if (jump) pc += signedExtend_len(13, ins.imm);
+                if (jump)
+                    pc += signedExtend_len(13, ins.imm);
+                else
+                    pc += 4;
                 break;
             }
             case I_type1:{
