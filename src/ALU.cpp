@@ -21,7 +21,7 @@ unsigned ALU::calculate(unsigned operand1, unsigned operand2, CalOp calop){
         case OrOp:
             return operand1 | operand2;
         case XorOp:
-            return operand1 | operand2;
+            return operand1 ^ operand2;
     }
     return 0;
 }

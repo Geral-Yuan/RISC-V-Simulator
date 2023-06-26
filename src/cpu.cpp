@@ -33,7 +33,7 @@ unsigned CPU::Hex2Dec(const std::string &HexStr){
 void CPU::getInput(){
     std::string strLine;
     unsigned pos = 0;
-    while (getline(std::cin,strLine) || strLine[0] == '$'){
+    while (getline(std::cin,strLine)){
         if (strLine[0] == '@')
             pos = Hex2Dec(strLine.substr(1, 8));
         else
