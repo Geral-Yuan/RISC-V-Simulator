@@ -8,6 +8,7 @@ void Decoder::decode(Instruction &ins){
     ins.opcode = ins.instructionBits & 0x7fu;
     ins.rd = (ins.instructionBits >> 7) & 0x1fu;
     ins.funct3 = (ins.instructionBits >> 12) & 0x07u;
+    ins.funct7 = (ins.instructionBits >> 25) << 25;
     ins.rs1 = (ins.instructionBits >> 15) & 0x1fu;
     ins.rs2 = (ins.instructionBits >> 20) & 0x1fu;
     // instruction can't match anyone is regarded as ILLEGAL for debugging
@@ -129,6 +130,7 @@ void Decoder::decode(Instruction &ins){
             ins.ins_type = ILLEGAL;
         }
     }else if (ins.opcode == 0x33u){
+        ins.ins_class = R_type;
         switch (ins.funct3){
         case 0x0u:
             if (ins.funct7 == 0x0u)

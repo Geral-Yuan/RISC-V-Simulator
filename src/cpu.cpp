@@ -33,12 +33,12 @@ unsigned CPU::Hex2Dec(const std::string &HexStr){
 void CPU::getInput(){
     std::string strLine;
     unsigned pos = 0;
-    while (getline(std::cin,strLine)){
+    while (getline(std::cin,strLine) || strLine[0] == '$'){
         if (strLine[0] == '@')
             pos = Hex2Dec(strLine.substr(1, 8));
         else
-            for (int i = 0; i < strLine.size(); ++i)
-                memory.write(pos, 1, Hex2Dec(strLine.substr(i, 2)));
+            for (int i = 0; i < strLine.size(); i += 3)
+                memory.write(pos++, 1, Hex2Dec(strLine.substr(i, 2)));
     }
 }
 
@@ -49,7 +49,7 @@ void CPU::debugRun(){
         decoder.decode(ins);
         if (ins.ins_type == END) break;
         switch (ins.ins_class){
-        case U_type:
+        case U_type:{
             switch (ins.ins_type){
             case LUI:
                 gprs.writeVal(ins.rd, ins.imm);
@@ -58,12 +58,15 @@ void CPU::debugRun(){
                 gprs.writeVal(ins.rd, pc + ins.imm);
                 break;
             }
+            pc += 4;
             break;
-        case J_type:
+        }
+        case J_type:{
             gprs.writeVal(ins.rd, pc + 4);
-            pc += signedExtend_len(20, ins.imm);
+            pc += signedExtend_len(21, ins.imm);
             break;
-        case B_type:
+        }
+        case B_type:{
             bool jump = false;
             switch (ins.ins_type){
             case BEQ:
@@ -85,14 +88,16 @@ void CPU::debugRun(){
                 jump = (gprs.getVal(ins.rs1) >= gprs.getVal(ins.rs2));
                 break;
             }
-            if (jump) pc += signedExtend_len(12, ins.imm);
+            if (jump) pc += signedExtend_len(13, ins.imm);
             break;
-        case I_type1:
+        }
+        case I_type1:{
             unsigned nxt_pc = pc + 4;
             pc = (gprs.getVal(ins.rs1) + signedExtend_len(12, ins.imm)) & (-2);
             gprs.writeVal(ins.rd, nxt_pc);
             break;
-        case I_type2:
+        }
+        case I_type2:{
             unsigned val_to_write;
             unsigned address_to_load = gprs.getVal(ins.rs1) + signedExtend_len(12, ins.imm);
             unsigned len_load;
@@ -119,8 +124,10 @@ void CPU::debugRun(){
             memory.read(address_to_load, len_load, val_to_write);
             if (!unsigned_flag) signedExtend_nBytes(len_load, val_to_write);
             gprs.writeVal(ins.rd, val_to_write);
+            pc += 4;
             break;
-        case I_type3:
+        }
+        case I_type3:{
             CalOp opi;
             switch (ins.ins_type){
             case ADDI:
@@ -152,8 +159,10 @@ void CPU::debugRun(){
                 break;
             }
             gprs.writeVal(ins.rd, alu.calculate(gprs.getVal(ins.rs1),signedExtend_len(12,ins.imm),opi));
+            pc += 4;
             break;
-        case R_type:
+        }
+        case R_type:{
             CalOp op;
             switch (ins.ins_type){
             case ADD:
@@ -188,8 +197,10 @@ void CPU::debugRun(){
                 break;
             }
             gprs.writeVal(ins.rd, alu.calculate(gprs.getVal(ins.rs1),gprs.getVal(ins.rs2),op));
+            pc += 4;
             break;
-        case S_type:
+        }
+        case S_type:{
             unsigned address_to_store = gprs.getVal(ins.rs1) + signedExtend_len(12,ins.imm);
             unsigned len_store;
             switch (ins.ins_type){
@@ -204,8 +215,11 @@ void CPU::debugRun(){
                 break;
             }
             memory.write(address_to_store, len_store, gprs.getVal(ins.rs2));
+            pc += 4;
             break;
         }
+        }
+        gprs.writeVal(0,0);
     }
     std::cout << (gprs.getVal(10) & 255u) << std::endl;
 }
