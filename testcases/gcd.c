@@ -11,5 +11,5 @@ int main() {
   printInt(gcd(10, 1));
   printInt(gcd(34986, 3087));
   printInt(gcd(2907, 1539));
-  return judgeResult % Mod;  // 178 (ok)
+  return judgeResult % Mod;  // 178
 }

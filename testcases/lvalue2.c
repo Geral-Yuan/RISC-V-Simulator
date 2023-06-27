@@ -6,5 +6,5 @@ int main() {
   int *p;
   p = b;
   printInt(p[2]);
-  return judgeResult % Mod;  // 175 (ok)
+  return judgeResult % Mod;  // 175
 }

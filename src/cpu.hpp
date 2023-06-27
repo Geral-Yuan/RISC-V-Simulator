@@ -5,7 +5,6 @@
 #include "registers.hpp"
 #include "decoder.hpp"
 #include "ALU.hpp"
-#include <iostream>
 
 class CPU{
 private:
@@ -31,35 +30,10 @@ private:
         return val;
     }
 
-    unsigned Hex2Dec(const std::string &HexStr){
-        unsigned DecInt = 0;
-        unsigned len = HexStr.size();
-        for (int i = 0; i < len; ++i){
-            DecInt <<= 4;
-            if (HexStr[i] <= '9')
-                DecInt += HexStr[i] - '0';
-            else
-                DecInt += 10 + HexStr[i] - 'A';
-        }
-        return DecInt;
-    }
-
 public:
-    CPU(){ pc = 0u; }
+    explicit CPU(std::istream &is = std::cin): memory(is), pc(0){}
 
-    void getInput(){
-        std::string strLine;
-        unsigned pos = 0;
-        while (getline(std::cin,strLine)){
-            if (strLine[0] == '@')
-                pos = Hex2Dec(strLine.substr(1, 8));
-            else
-                for (int i = 0; i < strLine.size(); i += 3)
-                    memory.write(pos++, 1, Hex2Dec(strLine.substr(i, 2)));
-        }
-    }
-
-    void debugRun(){
+    unsigned debugRun(){
         Instruction ins;
         while (1){
             memory.read(pc, 4, ins.instructionBits);
@@ -241,7 +215,7 @@ public:
             }
             gprs.writeVal(0,0);
         }
-        std::cout << (gprs.getVal(10) & 255u) << std::endl;
+        return gprs.getVal(10) & 255u;
     }
 };
 

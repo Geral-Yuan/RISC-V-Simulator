@@ -38,5 +38,5 @@ void search(int c) {
 
 int main() {
   search(0);
-  return judgeResult % Mod;  // 171 (25)
+  return judgeResult % Mod;  // 171
 }

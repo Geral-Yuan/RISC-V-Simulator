@@ -34,5 +34,5 @@ int main() {
               }
 
   printInt(total);
-  return judgeResult % Mod;  // 134 (ok)
+  return judgeResult % Mod;  // 134
 }

@@ -48,5 +48,5 @@ int main() {
     }
     printInt(phi[k]);
   }
-  return judgeResult % Mod;  // 50 (ok)
+  return judgeResult % Mod;  // 50
 }

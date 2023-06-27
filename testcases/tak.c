@@ -11,5 +11,5 @@ int main() {
   int b = 12;
   int c = 6;
   printInt(tak(a, b, c));
-  return judgeResult % Mod;  // 186 (ok)
+  return judgeResult % Mod;  // 186
 }

@@ -113,5 +113,5 @@ int main() {
   printInt(B);
   // print(" ");
   printInt(C);
-  return judgeResult % Mod;  // 58 (ok)
+  return judgeResult % Mod;  // 58
 }

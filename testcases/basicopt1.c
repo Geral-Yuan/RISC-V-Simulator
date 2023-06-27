@@ -25,5 +25,5 @@ int main() {
     for (j = 0; j < 100; j++)
       sum = sum + a[i][j];
   printInt(sum);
-  return judgeResult % Mod;  // 88 (ok)
+  return judgeResult % Mod;  // 88
 }

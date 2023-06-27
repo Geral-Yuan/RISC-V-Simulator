@@ -33,5 +33,5 @@ int main() {
   b[a[2][10]].num = -10;
   printNum(b[0].num);
   printNum(b[1].num);
-  return judgeResult % Mod;  // 115 (ok)
+  return judgeResult % Mod;  // 115
 }

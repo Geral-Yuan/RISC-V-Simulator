@@ -19,5 +19,5 @@ int main() {
     pb[2][i] = 0;
   for (i = 0; i < 4; i++)
     printInt(pb[3][i]);
-  return judgeResult % Mod;  // 43 (ok)
+  return judgeResult % Mod;  // 43
 }
