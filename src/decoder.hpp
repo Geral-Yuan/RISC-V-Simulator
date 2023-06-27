@@ -3,10 +3,10 @@
 
 #include "instructions.hpp"
 
-class Decoder{
-public:
-    void decode(Instruction &ins){
-        if (ins.instructionBits == 0x0ff00513u){
+class Decoder {
+   public:
+    void decode(Instruction &ins) {
+        if (ins.instructionBits == 0x0ff00513u) {
             ins.ins_type = END;
             return;
         }
@@ -17,21 +17,21 @@ public:
         ins.rs1 = (ins.instructionBits >> 15) & 0x1fu;
         ins.rs2 = (ins.instructionBits >> 20) & 0x1fu;
         // instruction can't match anyone is regarded as ILLEGAL for debugging
-        if (ins.opcode == 0x37u || ins.opcode == 0x17u){
+        if (ins.opcode == 0x37u || ins.opcode == 0x17u) {
             ins.ins_class = U_type;
             ins.imm = (ins.instructionBits >> 12) << 12;
             if (ins.opcode == 0x37u)
                 ins.ins_type = LUI;
             else
                 ins.ins_type = AUIPC;
-        }else if (ins.opcode == 0x6fu){
+        } else if (ins.opcode == 0x6fu) {
             ins.ins_class = J_type;
             ins.ins_type = JAL;
             ins.imm = ins.instructionBits & 0xff000u | (ins.instructionBits >> 9) & 0x800u | (ins.instructionBits >> 20) & 0x7feu | (ins.instructionBits >> 31 << 20);
-        }else if (ins.opcode == 0x63u){
+        } else if (ins.opcode == 0x63u) {
             ins.ins_class = B_type;
             ins.imm = (ins.instructionBits >> 7) & 0x1eu | (ins.instructionBits >> 20) & 0x7e0u | (ins.instructionBits << 4) & 0x800u | (ins.instructionBits >> 31 << 12);
-            switch (ins.funct3){
+            switch (ins.funct3) {
                 case 0x0u:
                     ins.ins_type = BEQ;
                     break;
@@ -53,14 +53,14 @@ public:
                 default:
                     ins.ins_type = ILLEGAL;
             }
-        }else if (ins.opcode == 0x67u || ins.opcode == 0x3u || ins.opcode == 0x13u){
+        } else if (ins.opcode == 0x67u || ins.opcode == 0x3u || ins.opcode == 0x13u) {
             ins.imm = ins.instructionBits >> 20;
-            if (ins.opcode == 0x67u){
+            if (ins.opcode == 0x67u) {
                 ins.ins_class = I_type1;
                 ins.ins_type = JALR;
-            }else if (ins.opcode == 0x3u){
+            } else if (ins.opcode == 0x3u) {
                 ins.ins_class = I_type2;
-                switch (ins.funct3){
+                switch (ins.funct3) {
                     case 0x0u:
                         ins.ins_type = LB;
                         break;
@@ -79,9 +79,9 @@ public:
                     default:
                         ins.ins_type = ILLEGAL;
                 }
-            }else{
+            } else {
                 ins.ins_class = I_type3;
-                switch (ins.funct3){
+                switch (ins.funct3) {
                     case 0x0u:
                         ins.ins_type = ADDI;
                         break;
@@ -118,10 +118,10 @@ public:
                         ins.ins_type = ILLEGAL;
                 }
             }
-        }else if (ins.opcode == 0x23u){
+        } else if (ins.opcode == 0x23u) {
             ins.ins_class = S_type;
             ins.imm = (ins.instructionBits >> 7) & 0x1fu | (ins.instructionBits >> 25 << 5);
-            switch (ins.funct3){
+            switch (ins.funct3) {
                 case 0x0u:
                     ins.ins_type = SB;
                     break;
@@ -134,9 +134,9 @@ public:
                 default:
                     ins.ins_type = ILLEGAL;
             }
-        }else if (ins.opcode == 0x33u){
+        } else if (ins.opcode == 0x33u) {
             ins.ins_class = R_type;
-            switch (ins.funct3){
+            switch (ins.funct3) {
                 case 0x0u:
                     if (ins.funct7 == 0x0u)
                         ins.ins_type = ADD;
@@ -192,10 +192,10 @@ public:
                 default:
                     ins.ins_type = ILLEGAL;
             }
-        }else{
+        } else {
             ins.ins_type = ILLEGAL;
         }
     }
 };
 
-#endif // DECODER_HPP
+#endif  // DECODER_HPP

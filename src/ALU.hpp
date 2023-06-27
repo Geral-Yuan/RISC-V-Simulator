@@ -1,7 +1,7 @@
 #ifndef ALU_HPP
 #define ALU_HPP
 
-enum CalOp{
+enum CalOp {
     AddOp,
     SubOp,
     LessOp,
@@ -14,10 +14,10 @@ enum CalOp{
     XorOp
 };
 
-class ALU{
-public:
-    unsigned calculate(unsigned operand1, unsigned operand2, CalOp calop){
-        switch (calop){
+class ALU {
+   public:
+    unsigned calculate(unsigned operand1, unsigned operand2, CalOp calop) {
+        switch (calop) {
             case AddOp:
                 return operand1 + operand2;
             case SubOp:
@@ -43,4 +43,4 @@ public:
     }
 };
 
-#endif // ALU_HPP
+#endif  // ALU_HPP

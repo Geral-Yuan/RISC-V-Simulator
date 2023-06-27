@@ -6,42 +6,42 @@
 #include "decoder.hpp"
 #include "ALU.hpp"
 
-class CPU{
-private:
+class CPU {
+   private:
     Memory memory;
     GPRs gprs;
     Decoder decoder;
     ALU alu;
     unsigned pc;
-    
-    void signedExtend_nBytes(unsigned numOfBytes, unsigned &val){
+
+    void signedExtend_nBytes(unsigned numOfBytes, unsigned &val) {
         unsigned ans;
         if (numOfBytes == 1)
-            ans = (char) val;
+            ans = (char)val;
         else if (numOfBytes == 2)
-            ans = (short) val;
+            ans = (short)val;
         else
             ans = val;
         val = ans;
     }
 
-    unsigned signedExtend_len(unsigned len, const unsigned &val){
+    unsigned signedExtend_len(unsigned len, const unsigned &val) {
         if (val >> (len - 1)) return (-1) << len | val;
         return val;
     }
 
-public:
-    explicit CPU(std::istream &is = std::cin): memory(is), pc(0){}
+   public:
+    explicit CPU(std::istream &is = std::cin) : memory(is), pc(0) {}
 
-    unsigned debugRun(){
+    unsigned debugRun() {
         Instruction ins;
-        while (1){
+        while (1) {
             memory.read(pc, 4, ins.instructionBits);
             decoder.decode(ins);
             if (ins.ins_type == END) break;
-            switch (ins.ins_class){
-                case U_type:{
-                    switch (ins.ins_type){
+            switch (ins.ins_class) {
+                case U_type: {
+                    switch (ins.ins_type) {
                         case LUI:
                             gprs.writeVal(ins.rd, ins.imm);
                             break;
@@ -52,14 +52,14 @@ public:
                     pc += 4;
                     break;
                 }
-                case J_type:{
+                case J_type: {
                     gprs.writeVal(ins.rd, pc + 4);
                     pc += signedExtend_len(21, ins.imm);
                     break;
                 }
-                case B_type:{
+                case B_type: {
                     bool jump = false;
-                    switch (ins.ins_type){
+                    switch (ins.ins_type) {
                         case BEQ:
                             jump = (gprs.getVal(ins.rs1) == gprs.getVal(ins.rs2));
                             break;
@@ -85,18 +85,18 @@ public:
                         pc += 4;
                     break;
                 }
-                case I_type1:{
+                case I_type1: {
                     unsigned nxt_pc = pc + 4;
                     pc = (gprs.getVal(ins.rs1) + signedExtend_len(12, ins.imm)) & (-2);
                     gprs.writeVal(ins.rd, nxt_pc);
                     break;
                 }
-                case I_type2:{
+                case I_type2: {
                     unsigned val_to_write;
                     unsigned address_to_load = gprs.getVal(ins.rs1) + signedExtend_len(12, ins.imm);
                     unsigned len_load;
                     bool unsigned_flag = false;
-                    switch (ins.ins_type){
+                    switch (ins.ins_type) {
                         case LB:
                             len_load = 1;
                             break;
@@ -121,9 +121,9 @@ public:
                     pc += 4;
                     break;
                 }
-                case I_type3:{
+                case I_type3: {
                     CalOp opi;
-                    switch (ins.ins_type){
+                    switch (ins.ins_type) {
                         case ADDI:
                             opi = AddOp;
                             break;
@@ -152,13 +152,13 @@ public:
                             opi = AndOp;
                             break;
                     }
-                    gprs.writeVal(ins.rd, alu.calculate(gprs.getVal(ins.rs1),signedExtend_len(12,ins.imm),opi));
+                    gprs.writeVal(ins.rd, alu.calculate(gprs.getVal(ins.rs1), signedExtend_len(12, ins.imm), opi));
                     pc += 4;
                     break;
                 }
-                case R_type:{
+                case R_type: {
                     CalOp op;
-                    switch (ins.ins_type){
+                    switch (ins.ins_type) {
                         case ADD:
                             op = AddOp;
                             break;
@@ -190,14 +190,14 @@ public:
                             op = AndOp;
                             break;
                     }
-                    gprs.writeVal(ins.rd, alu.calculate(gprs.getVal(ins.rs1),gprs.getVal(ins.rs2),op));
+                    gprs.writeVal(ins.rd, alu.calculate(gprs.getVal(ins.rs1), gprs.getVal(ins.rs2), op));
                     pc += 4;
                     break;
                 }
-                case S_type:{
-                    unsigned address_to_store = gprs.getVal(ins.rs1) + signedExtend_len(12,ins.imm);
+                case S_type: {
+                    unsigned address_to_store = gprs.getVal(ins.rs1) + signedExtend_len(12, ins.imm);
                     unsigned len_store;
-                    switch (ins.ins_type){
+                    switch (ins.ins_type) {
                         case SB:
                             len_store = 1;
                             break;
@@ -213,10 +213,10 @@ public:
                     break;
                 }
             }
-            gprs.writeVal(0,0);
+            gprs.writeVal(0, 0);
         }
         return gprs.getVal(10) & 255u;
     }
 };
 
-#endif // CPU_HPP
+#endif  // CPU_HPP

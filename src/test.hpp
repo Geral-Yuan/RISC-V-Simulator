@@ -23,7 +23,6 @@ const std::string file_name[] = {
     "queens",
     "statement_test",
     "superloop",
-    "tak"
-};
+    "tak"};
 
-#endif // TEST_HPP
+#endif  // TEST_HPP

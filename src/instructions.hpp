@@ -1,6 +1,8 @@
 #ifndef INSTRUCTIONS_HPP
 #define INSTRUCTIONS_HPP
 
+// clang-format off
+
 enum INSTRUCTION_TYPE {
     ILLEGAL, // illegal instruction 0
     LUI, AUIPC, // U-type 1-2
@@ -18,7 +20,9 @@ enum INSTRUCTION_CLASS {
     U_type, J_type, B_type, I_type1, I_type2, I_type3, S_type, R_type
 };
 
-struct Instruction{
+// clang-format on
+
+struct Instruction {
     unsigned instructionBits;
     unsigned opcode, imm, rs1, rs2, rd, funct3, funct7;
     unsigned result;
@@ -28,4 +32,4 @@ struct Instruction{
     explicit Instruction(const unsigned &insBits) { instructionBits = insBits; }
 };
 
-#endif // INSTRUCTIONS_HPP
+#endif  // INSTRUCTIONS_HPP
