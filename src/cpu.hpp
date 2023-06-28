@@ -9,8 +9,10 @@ class CPU {
     GPRs gprs;
     Predictor predictor;
     unsigned pc, nxt_pc;
+    unsigned clockCnt;
     int countDown, newCountDown;
-    bool IF_run, ID_run, EX_run, MEM_run, WB_run;
+    bool clearWrongBranch;
+    unsigned stallCnt;
 
     IF_stage IF;
     ID_stage ID;
@@ -24,28 +26,23 @@ class CPU {
     MEM_buffer MEM_WB;
     WB_buffer postWB;
 
-    void signedExtend_nBytes(unsigned numOfBytes, unsigned &val) {
-        unsigned ans;
-        if (numOfBytes == 1)
-            ans = (char)val;
-        else if (numOfBytes == 2)
-            ans = (short)val;
-        else
-            ans = val;
-        val = ans;
-    }
-
-    unsigned signedExtend_len(unsigned len, const unsigned &val) {
-        if (val >> (len - 1)) return (-1) << len | val;
-        return val;
-    }
-
    public:
+    // clang-format off
     explicit CPU(std::istream &is = std::cin)
-        : memory(is), pc(0), nxt_pc(0), countDown(-1), newCountDown(-1), IF_run(true), ID_run(true), EX_run(true), MEM_run(true), WB_run(true), IF(memory, predictor, pc, nxt_pc, IF_run, countDown), ID(IF_ID, gprs, pc, nxt_pc, ID_run, countDown, newCountDown), EX(ID_EX, predictor, pc, nxt_pc, EX_run, countDown), MEM(EX_MEM, memory, pc, nxt_pc, MEM_run, countDown), WB(MEM_WB, gprs, pc, nxt_pc, WB_run, countDown) {}
-
+        : memory(is), gprs(), pc(0), nxt_pc(0), clockCnt(0), countDown(-1), newCountDown(-1), clearWrongBranch(false), stallCnt(0),
+          IF(memory, predictor, pc, nxt_pc, countDown),
+          ID(IF_ID, gprs, countDown, newCountDown),
+          EX(ID_EX, predictor, nxt_pc, clearWrongBranch),
+          MEM(EX_MEM, memory, stallCnt),
+          WB(MEM_WB, gprs) {}
+    // clang-format on
     unsigned pipelineRun() {
         while (true) {
+            ++clockCnt;
+            if (stallCnt){
+                --stallCnt;
+                continue;
+            }
             // following five functions can run in any order
             IF.run();
             ID.run();
@@ -57,15 +54,20 @@ class CPU {
             if (countDown > 0) --countDown;
             if (countDown == 0) break;
 
-            if (IF_run)
+            if (clearWrongBranch){
+                IF.buffer.legal = false;
+                ID.buffer.legal = false;
+            }
+
+            if (IF.buffer.legal)
                 IF_ID = IF.buffer;
-            if (ID_run)
+            if (ID.buffer.legal)
                 ID_EX = ID.buffer;
-            if (EX_run)
+            if (EX.buffer.legal)
                 EX_MEM = EX.buffer;
-            if (MEM_run)
+            if (MEM.buffer.legal)
                 MEM_WB = MEM.buffer;
-            if (WB_run)
+            if (WB.buffer.legal)
                 postWB = WB.buffer;
         }
         return gprs.getVal(10) & 255u;

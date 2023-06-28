@@ -4,17 +4,19 @@
 #include "instructions.hpp"
 
 struct IF_buffer {
+    bool legal;
     unsigned insBits;
     unsigned insAddr;
     unsigned predictPC;
-    
-    IF_buffer() : insBits(0), insAddr(0) {}
+
+    IF_buffer() : legal(false), insBits(0), insAddr(0) {}
     void clear() {
         insBits = insAddr = 0;
     }
 };
 
 struct ID_buffer {
+    bool legal;
     unsigned regVal1, regVal2;
     unsigned imm;
     INSTRUCTION_TYPE insType;
@@ -23,7 +25,7 @@ struct ID_buffer {
     unsigned predictPC;
     unsigned regDes;
 
-    ID_buffer() : regVal1(0), regVal2(0), imm(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
+    ID_buffer() : legal(false), regVal1(0), regVal2(0), imm(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         regVal1 = regVal2 = insAddr = regDes = 0;
         insType = ILLEGAL;
@@ -31,6 +33,7 @@ struct ID_buffer {
 };
 
 struct EX_buffer {
+    bool legal;
     unsigned exRes;
     unsigned desAddr;
     INSTRUCTION_TYPE insType;
@@ -38,7 +41,7 @@ struct EX_buffer {
     unsigned insAddr;
     unsigned regDes;
 
-    EX_buffer() : exRes(0), desAddr(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
+    EX_buffer() : legal(false), exRes(0), desAddr(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         exRes = desAddr = insAddr = regDes = 0;
         insType = ILLEGAL;
@@ -46,13 +49,14 @@ struct EX_buffer {
 };
 
 struct MEM_buffer {
+    bool legal;
     unsigned exRes;
     INSTRUCTION_TYPE insType;
     INSTRUCTION_CLASS insClass;
     unsigned insAddr;
     unsigned regDes;
 
-    MEM_buffer() : exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
+    MEM_buffer() : legal(false), exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         exRes = insAddr = regDes = 0;
         insType = ILLEGAL;
@@ -60,13 +64,14 @@ struct MEM_buffer {
 };
 
 struct WB_buffer {
+    bool legal;
     unsigned exRes;
     INSTRUCTION_TYPE insType;
     INSTRUCTION_CLASS insClass;
     unsigned insAddr;
     unsigned regDes;
 
-    WB_buffer() : exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
+    WB_buffer() : legal(false), exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         exRes = insAddr = regDes = 0;
         insType = ILLEGAL;

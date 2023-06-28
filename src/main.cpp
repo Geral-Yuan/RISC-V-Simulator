@@ -1,5 +1,5 @@
 #include "cpu.hpp"
-#include "test.hpp"
+//#include "test.hpp"
 
 int main() {
 #ifdef TEST_HPP
@@ -7,18 +7,17 @@ int main() {
         printf("Testing case \"%s.c\"\n", file_name[i].c_str());
         std::ifstream fileIn("../testcases/" + file_name[i] + ".data");
         CPU cpu(fileIn);
-        unsigned ans = cpu.debugRun();
+        unsigned ans = cpu.pipelineRun();
         if (ans == testcase_ans[i])
             printf("%s\n\n", "AC");
         else
-            printf("%s\n%d\n%d\n\n", "WA", testcase_ans[i], ans);
+            printf("%s\ncorrect answer: %d\nmy answer: %d\n\n", "WA", testcase_ans[i], ans);
     }
 #endif
 
 #ifndef TEST_HPP
     CPU cpu;
-    cpu.debugRun();
-    unsigned ans = cpu.debugRun();
+    unsigned ans = cpu.pipelineRun();
     printf("%u\n", ans);
 #endif
 
