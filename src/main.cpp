@@ -1,5 +1,5 @@
 #include "cpu.hpp"
-//#include "test.hpp"
+#include "test.hpp"
 
 int main() {
 #ifdef TEST_HPP

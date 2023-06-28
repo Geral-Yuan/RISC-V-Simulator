@@ -11,12 +11,14 @@ struct IF_buffer {
 
     IF_buffer() : legal(false), insBits(0), insAddr(0) {}
     void clear() {
+        legal = false;
         insBits = insAddr = 0;
     }
 };
 
 struct ID_buffer {
     bool legal;
+    unsigned rs1, rs2;
     unsigned regVal1, regVal2;
     unsigned imm;
     INSTRUCTION_TYPE insType;
@@ -25,8 +27,9 @@ struct ID_buffer {
     unsigned predictPC;
     unsigned regDes;
 
-    ID_buffer() : legal(false), regVal1(0), regVal2(0), imm(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
+    ID_buffer() : legal(false), rs1(0), rs2(0), regVal1(0), regVal2(0), imm(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
+        legal = false;
         regVal1 = regVal2 = insAddr = regDes = 0;
         insType = ILLEGAL;
     }
@@ -43,6 +46,7 @@ struct EX_buffer {
 
     EX_buffer() : legal(false), exRes(0), desAddr(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
+        legal = false;
         exRes = desAddr = insAddr = regDes = 0;
         insType = ILLEGAL;
     }
@@ -58,6 +62,7 @@ struct MEM_buffer {
 
     MEM_buffer() : legal(false), exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
+        legal = false;
         exRes = insAddr = regDes = 0;
         insType = ILLEGAL;
     }
@@ -73,6 +78,7 @@ struct WB_buffer {
 
     WB_buffer() : legal(false), exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
+        legal = false;
         exRes = insAddr = regDes = 0;
         insType = ILLEGAL;
     }

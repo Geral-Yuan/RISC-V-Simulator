@@ -13,6 +13,8 @@ class CPU {
     int countDown, newCountDown;
     bool clearWrongBranch;
     unsigned stallCnt;
+    bool stallIF, stallID, stallEX;
+    bool bubble;
 
     IF_stage IF;
     ID_stage ID;
@@ -29,17 +31,18 @@ class CPU {
    public:
     // clang-format off
     explicit CPU(std::istream &is = std::cin)
-        : memory(is), gprs(), pc(0), nxt_pc(0), clockCnt(0), countDown(-1), newCountDown(-1), clearWrongBranch(false), stallCnt(0),
-          IF(memory, predictor, pc, nxt_pc, countDown),
-          ID(IF_ID, gprs, countDown, newCountDown),
-          EX(ID_EX, predictor, nxt_pc, clearWrongBranch),
+        : memory(is), gprs(), pc(0), nxt_pc(0), clockCnt(0), countDown(-1), newCountDown(-1), clearWrongBranch(false),
+          stallCnt(0), stallIF(false), stallID(false), stallEX(false), bubble(false),
+          IF(memory, predictor, pc, nxt_pc, countDown, stallIF),
+          ID(IF_ID, gprs, countDown, newCountDown, stallID),
+          EX(ID_EX, predictor, nxt_pc, clearWrongBranch, stallEX),
           MEM(EX_MEM, memory, stallCnt),
           WB(MEM_WB, gprs) {}
     // clang-format on
     unsigned pipelineRun() {
         while (true) {
             ++clockCnt;
-            if (stallCnt){
+            if (stallCnt) {
                 --stallCnt;
                 continue;
             }
@@ -50,25 +53,57 @@ class CPU {
             MEM.run();
             WB.run();
 
-            countDown = newCountDown;
+            if (clearWrongBranch) {
+                IF.buffer.clear();
+                ID.buffer.clear();
+                clearWrongBranch = false;
+            }
+
+            if (ID.buffer.legal && newCountDown > 0) {
+                countDown = newCountDown;
+                newCountDown = -1;
+            } else
+                newCountDown = -1;
             if (countDown > 0) --countDown;
             if (countDown == 0) break;
 
-            if (clearWrongBranch){
-                IF.buffer.legal = false;
-                ID.buffer.legal = false;
+            if (nxt_pc) {
+                pc = nxt_pc;
+                nxt_pc = 0;
             }
 
-            if (IF.buffer.legal)
-                IF_ID = IF.buffer;
-            if (ID.buffer.legal)
-                ID_EX = ID.buffer;
-            if (EX.buffer.legal)
-                EX_MEM = EX.buffer;
-            if (MEM.buffer.legal)
+            if (bubble) {
+                bubble = stallIF = stallID = stallEX = false;
+                EX_MEM.clear();
                 MEM_WB = MEM.buffer;
-            if (WB.buffer.legal)
                 postWB = WB.buffer;
+            } else {
+                IF_ID = IF.buffer;
+                ID_EX = ID.buffer;
+                EX_MEM = EX.buffer;
+                MEM_WB = MEM.buffer;
+                postWB = WB.buffer;
+            }
+
+            // stall
+            if (EX_MEM.regDes != 0 && (ID_EX.rs1 == EX_MEM.regDes || ID_EX.rs2 == EX_MEM.regDes) && EX_MEM.insClass == I_type2)
+                bubble = stallIF = stallID = stallEX = true;
+
+            // forwarding
+            if (postWB.regDes != 0 && ID_EX.rs1 == postWB.regDes && postWB.insClass != S_type && postWB.insClass != B_type)
+                ID_EX.regVal1 = postWB.exRes;
+            if (postWB.regDes != 0 && ID_EX.rs2 == postWB.regDes && postWB.insClass != S_type && postWB.insClass != B_type)
+                ID_EX.regVal2 = postWB.exRes;
+
+            if (MEM_WB.regDes != 0 && ID_EX.rs1 == MEM_WB.regDes && MEM_WB.insClass != S_type && MEM_WB.insClass != B_type)
+                ID_EX.regVal1 = MEM_WB.exRes;
+            if (MEM_WB.regDes != 0 && ID_EX.rs2 == MEM_WB.regDes && MEM_WB.insClass != S_type && MEM_WB.insClass != B_type)
+                ID_EX.regVal2 = MEM_WB.exRes;
+
+            if (EX_MEM.regDes != 0 && ID_EX.rs1 == EX_MEM.regDes && EX_MEM.insClass != S_type && EX_MEM.insClass != B_type)
+                ID_EX.regVal1 = EX_MEM.exRes;
+            if (EX_MEM.regDes != 0 && ID_EX.rs2 == EX_MEM.regDes && EX_MEM.insClass != S_type && EX_MEM.insClass != B_type)
+                ID_EX.regVal2 = EX_MEM.exRes;
         }
         return gprs.getVal(10) & 255u;
     }

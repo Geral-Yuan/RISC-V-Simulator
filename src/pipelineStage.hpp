@@ -8,6 +8,17 @@
 #include "ALU.hpp"
 #include "pipelineBuffer.hpp"
 
+#include <bitset>
+
+std::string insNames[40] = {"illegal", "lui", "auipc", "jal", "beq", "bne", "blt", "bge",
+                            "bltu", "bgeu", "jalr", "lb", "lh", "lw", "lbu", "lhu",
+                            "addi", "slti", "sltiu", "xori", "ori", "andi", "slli",
+                            "srli", "srai", "sb", "sh", "sw", "add", "sub", "sll",
+                            "slt", "sltu", "xor", "srl", "sra", "or", "and", "end"};
+std::string ins_name(INSTRUCTION_TYPE type) {
+    return insNames[type];
+}
+
 void signedExtend_nBytes(unsigned numOfBytes, unsigned &val) {
     unsigned ans;
     if (numOfBytes == 1)
@@ -31,12 +42,14 @@ class IF_stage {
     Predictor &predictor;
     unsigned &pc, &nxt_pc;
     int countDown;
+    bool &stallIF;
 
-    IF_stage(Memory &mem, Predictor &pred, unsigned &_pc, unsigned &_nxt_pc, int cntD)
-        : memory(mem), predictor(pred), pc(_pc), nxt_pc(_nxt_pc), countDown(cntD) {}
+    IF_stage(Memory &mem, Predictor &pred, unsigned &_pc, unsigned &_nxt_pc, int cntD, bool &_stallIF)
+        : memory(mem), predictor(pred), pc(_pc), nxt_pc(_nxt_pc), countDown(cntD), stallIF(_stallIF) {}
 
     void run() {
         if (countDown > 0) return;
+        if (stallIF) return;
         buffer.legal = true;
         buffer.insAddr = pc;
         memory.read(pc, 4, buffer.insBits);
@@ -52,20 +65,30 @@ class ID_stage {
     GPRs &gprs;
     int countDown;
     int &newCountDown;
+    bool &stallID;
 
-    ID_stage(IF_buffer &_IF_ID, GPRs &_gprs, int cntD, int &ncntD)
-        : IF_ID(_IF_ID), gprs(_gprs), countDown(cntD), newCountDown(ncntD) {}
+    ID_stage(IF_buffer &_IF_ID, GPRs &_gprs, int cntD, int &ncntD, bool &_stallID)
+        : IF_ID(_IF_ID), gprs(_gprs), countDown(cntD), newCountDown(ncntD), stallID(_stallID) {}
 
     void run() {
         if (countDown > 0) return;
         if (!IF_ID.legal) return;
+        if (stallID) return;
         Instruction ins(IF_ID.insBits);
         decoder.decode(ins);
+
+        // std::cout << std::hex << IF_ID.insAddr << ": " << ins.instructionBits << ' ';
+        // std::cout << ins_name(ins.ins_type) << ' ' << std::bitset<7>(ins.opcode) <<
+        //         " 0x" << ins.imm << ' ' << std::bitset<5>(ins.rd) << ' ' <<
+        //         std::bitset<5>(ins.rs1) << ' ' << std::bitset<5>(ins.rs2) << ' ' <<
+        //         std::bitset<3>(ins.funct3) << ' ' << std::bitset<7>(ins.funct7) << std::endl;
+
+        buffer.legal = true;
         if (ins.ins_type == END) {
             newCountDown = 3;
             return;
         }
-        buffer.legal = true;
+
         buffer.insAddr = IF_ID.insAddr;
         buffer.predictPC = IF_ID.predictPC;
         buffer.insType = ins.ins_type;
@@ -74,10 +97,13 @@ class ID_stage {
             case U_type:
             case J_type:
                 buffer.imm = ins.imm;
+                buffer.regDes = ins.rd;
                 break;
             case B_type:
             case S_type:
                 buffer.imm = ins.imm;
+                buffer.rs1 = ins.rs1;
+                buffer.rs2 = ins.rs2;
                 buffer.regVal1 = gprs.getVal(ins.rs1);
                 buffer.regVal2 = gprs.getVal(ins.rs2);
                 break;
@@ -85,10 +111,13 @@ class ID_stage {
             case I_type2:
             case I_type3:
                 buffer.imm = ins.imm;
+                buffer.rs1 = ins.rs1;
                 buffer.regVal1 = gprs.getVal(ins.rs1);
                 buffer.regDes = ins.rd;
                 break;
             case R_type:
+                buffer.rs1 = ins.rs1;
+                buffer.rs2 = ins.rs2;
                 buffer.regVal1 = gprs.getVal(ins.rs1);
                 buffer.regVal2 = gprs.getVal(ins.rs2);
                 buffer.regDes = ins.rd;
@@ -105,12 +134,14 @@ class EX_stage {
     Predictor &predictor;
     unsigned &nxt_pc, correct_nxt_pc;
     bool &clearWrongBranch;
+    bool &stallEX;
 
-    EX_stage(ID_buffer &_ID_EX, Predictor &pred, unsigned &_nxt_pc, bool &_clear)
-        : ID_EX(_ID_EX), predictor(pred), nxt_pc(_nxt_pc), clearWrongBranch(_clear) {}
+    EX_stage(ID_buffer &_ID_EX, Predictor &pred, unsigned &_nxt_pc, bool &_clear, bool &_stallEX)
+        : ID_EX(_ID_EX), predictor(pred), nxt_pc(_nxt_pc), clearWrongBranch(_clear), stallEX(_stallEX) {}
 
     void run() {
         if (!ID_EX.legal) return;
+        if (stallEX) return;
         buffer.legal = true;
         buffer.insAddr = ID_EX.insAddr;
         buffer.insType = ID_EX.insType;
@@ -121,8 +152,10 @@ class EX_stage {
                 switch (ID_EX.insType) {
                     case LUI:
                         buffer.exRes = ID_EX.imm;
+                        break;
                     case AUIPC:
-                        buffer.exRes += ID_EX.insAddr;
+                        buffer.exRes = ID_EX.insAddr + ID_EX.imm;
+                        break;
                 }
                 break;
             }
@@ -207,7 +240,7 @@ class EX_stage {
                         opi = AndOp;
                         break;
                 }
-                buffer.exRes = alu.calculate(ID_EX.regVal1, ID_EX.imm, opi);
+                buffer.exRes = alu.calculate(ID_EX.regVal1, signedExtend_len(12, ID_EX.imm), opi);
                 break;
             }
             case R_type: {
@@ -289,6 +322,7 @@ class MEM_stage {
                         break;
                 }
                 memory.write(EX_MEM.desAddr, len_store, EX_MEM.exRes);
+                stallCnt = 2;
                 break;
             }
             case I_type2: {
@@ -314,10 +348,11 @@ class MEM_stage {
                         break;
                 }
                 memory.read(EX_MEM.desAddr, len_load, buffer.exRes);
+                stallCnt = 2;
                 break;
             }
             default:
-                stallCnt = 2;
+                stallCnt = 0;
         }
     }
 };
@@ -346,9 +381,10 @@ class WB_stage {
             case I_type2:
             case I_type3:
             case R_type:
-                gprs.writeVal(MEM_WB.regDes,MEM_WB.exRes);
+                gprs.writeVal(MEM_WB.regDes, MEM_WB.exRes);
                 break;
         }
+        gprs.writeVal(0, 0);
     }
 };
 
