@@ -1,18 +1,28 @@
 #ifndef CPU_HPP
 #define CPU_HPP
 
-#include "memory.hpp"
-#include "registers.hpp"
-#include "decoder.hpp"
-#include "ALU.hpp"
+#include "pipelineStage.hpp"
 
 class CPU {
    private:
     Memory memory;
     GPRs gprs;
-    Decoder decoder;
-    ALU alu;
-    unsigned pc;
+    Predictor predictor;
+    unsigned pc, nxt_pc;
+    int countDown, newCountDown;
+    bool IF_run, ID_run, EX_run, MEM_run, WB_run;
+
+    IF_stage IF;
+    ID_stage ID;
+    EX_stage EX;
+    MEM_stage MEM;
+    WB_stage WB;
+
+    IF_buffer IF_ID;
+    ID_buffer ID_EX;
+    EX_buffer EX_MEM;
+    MEM_buffer MEM_WB;
+    WB_buffer postWB;
 
     void signedExtend_nBytes(unsigned numOfBytes, unsigned &val) {
         unsigned ans;
@@ -31,9 +41,39 @@ class CPU {
     }
 
    public:
-    explicit CPU(std::istream &is = std::cin) : memory(is), pc(0) {}
+    explicit CPU(std::istream &is = std::cin)
+        : memory(is), pc(0), nxt_pc(0), countDown(-1), newCountDown(-1), IF_run(true), ID_run(true), EX_run(true), MEM_run(true), WB_run(true), IF(memory, predictor, pc, nxt_pc, IF_run, countDown), ID(IF_ID, gprs, pc, nxt_pc, ID_run, countDown, newCountDown), EX(ID_EX, predictor, pc, nxt_pc, EX_run, countDown), MEM(EX_MEM, memory, pc, nxt_pc, MEM_run, countDown), WB(MEM_WB, gprs, pc, nxt_pc, WB_run, countDown) {}
 
-    unsigned debugRun() {
+    unsigned pipelineRun() {
+        while (true) {
+            // following five functions can run in any order
+            IF.run();
+            ID.run();
+            EX.run();
+            MEM.run();
+            WB.run();
+
+            countDown = newCountDown;
+            if (countDown > 0) --countDown;
+            if (countDown == 0) break;
+
+            if (IF_run)
+                IF_ID = IF.buffer;
+            if (ID_run)
+                ID_EX = ID.buffer;
+            if (EX_run)
+                EX_MEM = EX.buffer;
+            if (MEM_run)
+                MEM_WB = MEM.buffer;
+            if (WB_run)
+                postWB = WB.buffer;
+        }
+        return gprs.getVal(10) & 255u;
+    }
+
+    unsigned naiveRun() {
+        Decoder decoder;
+        ALU alu;
         Instruction ins;
         while (1) {
             memory.read(pc, 4, ins.instructionBits);

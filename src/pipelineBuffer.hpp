@@ -6,6 +6,8 @@
 struct IF_buffer {
     unsigned insBits;
     unsigned insAddr;
+    unsigned predictPC;
+    
     IF_buffer() : insBits(0), insAddr(0) {}
     void clear() {
         insBits = insAddr = 0;
@@ -18,7 +20,9 @@ struct ID_buffer {
     INSTRUCTION_TYPE insType;
     INSTRUCTION_CLASS insClass;
     unsigned insAddr;
+    unsigned predictPC;
     unsigned regDes;
+
     ID_buffer() : regVal1(0), regVal2(0), imm(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         regVal1 = regVal2 = insAddr = regDes = 0;
@@ -33,6 +37,7 @@ struct EX_buffer {
     INSTRUCTION_CLASS insClass;
     unsigned insAddr;
     unsigned regDes;
+
     EX_buffer() : exRes(0), desAddr(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         exRes = desAddr = insAddr = regDes = 0;
@@ -46,6 +51,7 @@ struct MEM_buffer {
     INSTRUCTION_CLASS insClass;
     unsigned insAddr;
     unsigned regDes;
+
     MEM_buffer() : exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         exRes = insAddr = regDes = 0;
@@ -59,6 +65,7 @@ struct WB_buffer {
     INSTRUCTION_CLASS insClass;
     unsigned insAddr;
     unsigned regDes;
+
     WB_buffer() : exRes(0), insType(ILLEGAL), insAddr(0), regDes(0) {}
     void clear() {
         exRes = insAddr = regDes = 0;
