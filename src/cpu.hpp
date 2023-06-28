@@ -39,6 +39,64 @@ class CPU {
           MEM(EX_MEM, memory, stallCnt),
           WB(MEM_WB, gprs) {}
     // clang-format on
+
+    void bubbling() {
+        if (EX_MEM.regDes != 0 && (ID_EX.rs1 == EX_MEM.regDes || ID_EX.rs2 == EX_MEM.regDes) && EX_MEM.insClass == I_type2)
+            bubble = stallIF = stallID = stallEX = true;
+    }
+    void forwarding() {
+        // postWB -> ID_EX
+        if (postWB.regDes != 0 && ID_EX.rs1 == postWB.regDes && postWB.insClass != S_type && postWB.insClass != B_type)
+            ID_EX.regVal1 = postWB.exRes;
+        if (postWB.regDes != 0 && ID_EX.rs2 == postWB.regDes && postWB.insClass != S_type && postWB.insClass != B_type)
+            ID_EX.regVal2 = postWB.exRes;
+        // MEM_WB -> ID_EX
+        if (MEM_WB.regDes != 0 && ID_EX.rs1 == MEM_WB.regDes && MEM_WB.insClass != S_type && MEM_WB.insClass != B_type)
+            ID_EX.regVal1 = MEM_WB.exRes;
+        if (MEM_WB.regDes != 0 && ID_EX.rs2 == MEM_WB.regDes && MEM_WB.insClass != S_type && MEM_WB.insClass != B_type)
+            ID_EX.regVal2 = MEM_WB.exRes;
+        // EX_MEM -> ID_EX
+        if (EX_MEM.regDes != 0 && ID_EX.rs1 == EX_MEM.regDes && EX_MEM.insClass != S_type && EX_MEM.insClass != B_type)
+            ID_EX.regVal1 = EX_MEM.exRes;
+        if (EX_MEM.regDes != 0 && ID_EX.rs2 == EX_MEM.regDes && EX_MEM.insClass != S_type && EX_MEM.insClass != B_type)
+            ID_EX.regVal2 = EX_MEM.exRes;
+    }
+    void handleBranch() {
+        if (clearWrongBranch) {
+            IF.buffer.clear();
+            ID.buffer.clear();
+            clearWrongBranch = false;
+        }
+        if (nxt_pc) {
+            pc = nxt_pc;
+            nxt_pc = 0;
+        }
+    }
+    bool checkDone() {
+        if (ID.buffer.legal && newCountDown > 0) {
+            countDown = newCountDown;
+            newCountDown = -1;
+        } else
+            newCountDown = -1;
+        if (countDown > 0) --countDown;
+        if (countDown == 0) return true;
+        return false;
+    }
+    void bufferForward() {
+        if (bubble) {
+            bubble = stallIF = stallID = stallEX = false;
+            EX_MEM.clear();
+            MEM_WB = MEM.buffer;
+            postWB = WB.buffer;
+        } else {
+            IF_ID = IF.buffer;
+            ID_EX = ID.buffer;
+            EX_MEM = EX.buffer;
+            MEM_WB = MEM.buffer;
+            postWB = WB.buffer;
+        }
+    }
+
     unsigned pipelineRun() {
         while (true) {
             ++clockCnt;
@@ -53,57 +111,11 @@ class CPU {
             MEM.run();
             WB.run();
 
-            if (clearWrongBranch) {
-                IF.buffer.clear();
-                ID.buffer.clear();
-                clearWrongBranch = false;
-            }
-
-            if (ID.buffer.legal && newCountDown > 0) {
-                countDown = newCountDown;
-                newCountDown = -1;
-            } else
-                newCountDown = -1;
-            if (countDown > 0) --countDown;
-            if (countDown == 0) break;
-
-            if (nxt_pc) {
-                pc = nxt_pc;
-                nxt_pc = 0;
-            }
-
-            if (bubble) {
-                bubble = stallIF = stallID = stallEX = false;
-                EX_MEM.clear();
-                MEM_WB = MEM.buffer;
-                postWB = WB.buffer;
-            } else {
-                IF_ID = IF.buffer;
-                ID_EX = ID.buffer;
-                EX_MEM = EX.buffer;
-                MEM_WB = MEM.buffer;
-                postWB = WB.buffer;
-            }
-
-            // stall
-            if (EX_MEM.regDes != 0 && (ID_EX.rs1 == EX_MEM.regDes || ID_EX.rs2 == EX_MEM.regDes) && EX_MEM.insClass == I_type2)
-                bubble = stallIF = stallID = stallEX = true;
-
-            // forwarding
-            if (postWB.regDes != 0 && ID_EX.rs1 == postWB.regDes && postWB.insClass != S_type && postWB.insClass != B_type)
-                ID_EX.regVal1 = postWB.exRes;
-            if (postWB.regDes != 0 && ID_EX.rs2 == postWB.regDes && postWB.insClass != S_type && postWB.insClass != B_type)
-                ID_EX.regVal2 = postWB.exRes;
-
-            if (MEM_WB.regDes != 0 && ID_EX.rs1 == MEM_WB.regDes && MEM_WB.insClass != S_type && MEM_WB.insClass != B_type)
-                ID_EX.regVal1 = MEM_WB.exRes;
-            if (MEM_WB.regDes != 0 && ID_EX.rs2 == MEM_WB.regDes && MEM_WB.insClass != S_type && MEM_WB.insClass != B_type)
-                ID_EX.regVal2 = MEM_WB.exRes;
-
-            if (EX_MEM.regDes != 0 && ID_EX.rs1 == EX_MEM.regDes && EX_MEM.insClass != S_type && EX_MEM.insClass != B_type)
-                ID_EX.regVal1 = EX_MEM.exRes;
-            if (EX_MEM.regDes != 0 && ID_EX.rs2 == EX_MEM.regDes && EX_MEM.insClass != S_type && EX_MEM.insClass != B_type)
-                ID_EX.regVal2 = EX_MEM.exRes;
+            handleBranch();
+            if (checkDone()) break;
+            bufferForward();
+            bubbling();
+            forwarding();
         }
         return gprs.getVal(10) & 255u;
     }
