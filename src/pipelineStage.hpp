@@ -53,7 +53,7 @@ class IF_stage {
         buffer.legal = true;
         buffer.insAddr = pc;
         memory.read(pc, 4, buffer.insBits);
-        if (!nxt_pc) nxt_pc = buffer.predictPC = predictor.nxtPC(pc, buffer.insBits);
+        nxt_pc = buffer.predictPC = predictor.nxtPC(pc, buffer.insBits);
     }
 };
 
@@ -159,18 +159,10 @@ class EX_stage {
                 }
                 break;
             }
-            case J_type: {
-                buffer.exRes = ID_EX.insAddr + 4;
-                correct_nxt_pc = ID_EX.insAddr + signedExtend_len(21, ID_EX.imm);
-                if (nxt_pc != correct_nxt_pc) {
-                    nxt_pc = correct_nxt_pc;
-                    clearWrongBranch = true;
-                }
-                break;
-            }
+            case J_type:
             case I_type1: {
+                correct_nxt_pc = (ID_EX.insClass == J_type ? ID_EX.insAddr + signedExtend_len(21, ID_EX.imm) : (ID_EX.regVal1 + signedExtend_len(12, ID_EX.imm)) & (-2));
                 buffer.exRes = ID_EX.insAddr + 4;
-                correct_nxt_pc = (ID_EX.regVal1 + signedExtend_len(12, ID_EX.imm)) & (-2);
                 if (nxt_pc != correct_nxt_pc) {
                     nxt_pc = correct_nxt_pc;
                     clearWrongBranch = true;
@@ -209,75 +201,52 @@ class EX_stage {
                 }
                 break;
             }
-            case I_type3: {
-                CalOp opi;
-                switch (ID_EX.insType) {
-                    case ADDI:
-                        opi = AddOp;
-                        break;
-                    case SLLI:
-                        opi = LShiftOp;
-                        break;
-                    case SRLI:
-                        opi = RshiftOp;
-                        break;
-                    case SRAI:
-                        opi = RshiftAop;
-                        break;
-                    case SLTI:
-                        opi = LessOp;
-                        break;
-                    case SLTIU:
-                        opi = ULessOp;
-                        break;
-                    case XORI:
-                        opi = XorOp;
-                        break;
-                    case ORI:
-                        opi = OrOp;
-                        break;
-                    case ANDI:
-                        opi = AndOp;
-                        break;
-                }
-                buffer.exRes = alu.calculate(ID_EX.regVal1, signedExtend_len(12, ID_EX.imm), opi);
-                break;
-            }
+            case I_type3:
             case R_type: {
+                unsigned operand = (ID_EX.insClass == I_type3 ? signedExtend_len(12, ID_EX.imm) : ID_EX.regVal2);
                 CalOp op;
                 switch (ID_EX.insType) {
                     case ADD:
+                    case ADDI:
                         op = AddOp;
                         break;
                     case SUB:
                         op = SubOp;
                         break;
                     case SLL:
+                    case SLLI:
                         op = LShiftOp;
                         break;
                     case SRL:
+                    case SRLI:
                         op = RshiftOp;
                         break;
                     case SRA:
+                    case SRAI:
                         op = RshiftAop;
                         break;
                     case SLT:
+                    case SLTI:
                         op = LessOp;
                         break;
                     case SLTU:
+                    case SLTIU:
                         op = ULessOp;
                         break;
                     case XOR:
+                    case XORI:
                         op = XorOp;
                         break;
                     case OR:
+                    case ORI:
                         op = OrOp;
                         break;
                     case AND:
+                    case ANDI:
                         op = AndOp;
                         break;
                 }
-                buffer.exRes = alu.calculate(ID_EX.regVal1, ID_EX.regVal2, op);
+                buffer.exRes = alu.calculate(ID_EX.regVal1, operand, op);
                 break;
             }
             case S_type:

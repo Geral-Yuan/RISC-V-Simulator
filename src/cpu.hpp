@@ -67,17 +67,11 @@ class CPU {
             ID.buffer.clear();
             clearWrongBranch = false;
         }
-        if (nxt_pc) {
-            pc = nxt_pc;
-            nxt_pc = 0;
-        }
+        pc = nxt_pc;
     }
     bool checkDone() {
-        if (ID.buffer.legal && newCountDown > 0) {
-            countDown = newCountDown;
-            newCountDown = -1;
-        } else
-            newCountDown = -1;
+        if (ID.buffer.legal && newCountDown > 0) countDown = newCountDown;
+        newCountDown = -1;
         if (countDown > 0) --countDown;
         if (countDown == 0) return true;
         return false;
@@ -117,6 +111,7 @@ class CPU {
             bubbling();
             forwarding();
         }
+        std::cout << "clock counter: " << clockCnt << std::endl;
         return gprs.getVal(10) & 255u;
     }
 
