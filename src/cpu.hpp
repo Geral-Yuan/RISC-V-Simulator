@@ -67,7 +67,10 @@ class CPU {
             ID.buffer.clear();
             clearWrongBranch = false;
         }
-        pc = nxt_pc;
+        if (nxt_pc) {
+            pc = nxt_pc;
+            nxt_pc = 0;
+        }
     }
     bool checkDone() {
         if (ID.buffer.legal && newCountDown > 0) countDown = newCountDown;

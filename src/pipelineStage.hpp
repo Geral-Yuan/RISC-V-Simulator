@@ -53,7 +53,7 @@ class IF_stage {
         buffer.legal = true;
         buffer.insAddr = pc;
         memory.read(pc, 4, buffer.insBits);
-        nxt_pc = buffer.predictPC = predictor.nxtPC(pc, buffer.insBits);
+        if (!nxt_pc) nxt_pc = buffer.predictPC = predictor.nxtPC(pc, buffer.insBits);
     }
 };
 
