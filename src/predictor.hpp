@@ -1,26 +1,30 @@
 #ifndef PREDICTOR_HPP
 #define PREDICTOR_HPP
+#define LOCAL_HISTORY_PREDICTOR
 
 #include <cstdio>
 #include <cstring>
 #include "instructions.hpp"
 
+#ifdef NAIVE_PREDICTOR
 // naive version
-// class Predictor {
-//    private:
-//     int totalCnt, correctCnt;
+class Predictor {
+   private:
+    int totalCnt, correctCnt;
 
-//    public:
-//     Predictor() : totalCnt(0), correctCnt(0) {}
-//     ~Predictor() { printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100); }
-//     unsigned predictNextPC(unsigned pc, unsigned insBits) { return pc + 4; }
-//     bool judgePred(unsigned pc, INSTRUCTION_TYPE ins, unsigned correctAns, unsigned predAns) {
-//         ++totalCnt;
-//         if (predAns == correctAns) ++correctCnt;
-//         return predAns == correctAns;
-//     }
-// };
+   public:
+    Predictor() : totalCnt(0), correctCnt(0) {}
+    ~Predictor() { printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100); }
+    unsigned predictNextPC(unsigned pc, unsigned insBits) { return pc + 4; }
+    bool judgePred(unsigned pc, INSTRUCTION_TYPE ins, unsigned correctAns, unsigned predAns) {
+        ++totalCnt;
+        if (predAns == correctAns) ++correctCnt;
+        return predAns == correctAns;
+    }
+};
+#endif
 
+#ifdef TWO_BIT_SATURATE_COUNTER_PREDICTOR
 // 2-bit saturate counter version
 class Predictor {
    private:
@@ -58,5 +62,63 @@ class Predictor {
         return predAns == correctAns;
     }
 };
+#endif
+
+#ifdef LOCAL_HISTORY_PREDICTOR
+// local history predictor
+class Predictor {
+   private:
+    int totalCnt, correctCnt;
+    size_t size;
+    unsigned char *BHT;
+    unsigned char *PHTs[16];
+    unsigned *targetAddress;
+
+   public:
+    Predictor(int bitsCnt) : totalCnt(0), correctCnt(0), size(2 << bitsCnt) {
+        BHT = new unsigned char[size];
+        for (int i = 0; i < 16; ++i) {
+            PHTs[i] = new unsigned char[size];
+            memset(PHTs[i], 0, size * sizeof(unsigned char));
+        }
+        targetAddress = new unsigned[size];
+        memset(BHT, 0, size * sizeof(unsigned char));
+        memset(targetAddress, 0, size * sizeof(unsigned));
+    }
+    ~Predictor() {
+        printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
+        delete[] BHT;
+        for (int i = 0; i < 16; ++i) delete[] PHTs[i];
+        delete[] targetAddress;
+    }
+    unsigned predictNextPC(unsigned pc, unsigned insBits) {
+        unsigned opcode = insBits & 0x7fu;
+        unsigned hash = (pc >> 2) & (size - 1);
+        if (opcode == 0x6fu || opcode == 0x67u) return targetAddress[hash] ? targetAddress[hash] : pc + 4;
+        if (opcode == 0x63u) return targetAddress[hash] && (PHTs[BHT[hash] & 0xfu][hash] & 2) ? targetAddress[hash] : pc + 4;
+        return pc + 4;
+    }
+    void storeTargetAddress(unsigned pc, unsigned _targetAddress) { targetAddress[(pc >> 2) & (size - 1)] = _targetAddress; }
+    bool judgePred(unsigned pc, INSTRUCTION_TYPE ins, unsigned correctAns, unsigned predAns) {
+        unsigned hash = (pc >> 2) & (size - 1);
+        if (correctAns == pc + 4) {
+            if (PHTs[BHT[hash] & 0xfu][hash]) --PHTs[BHT[hash] & 0xfu][hash];
+            BHT[hash] <<= 1;
+        }
+        if (correctAns == targetAddress[hash]) {
+            if (PHTs[BHT[hash] & 0xfu][hash] != 3) ++PHTs[BHT[hash] & 0xfu][hash];
+            BHT[hash] = BHT[hash] << 1 | 1;
+        }
+        ++totalCnt;
+        if (predAns == correctAns) ++correctCnt;
+        return predAns == correctAns;
+    }
+};
+#endif
+
+#ifdef HYBRID_PREDICTOR
+class hybridPredictor {
+};
+#endif
 
 #endif  // PREDICTOR_HPP
