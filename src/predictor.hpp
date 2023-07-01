@@ -14,7 +14,7 @@ class Predictor {
 
    public:
     Predictor() : totalCnt(0), correctCnt(0) {}
-    ~Predictor() { printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100); }
+    // ~Predictor() { printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100); }
     unsigned predictNextPC(unsigned pc, unsigned insBits) { return pc + 4; }
     bool judgePred(unsigned pc, INSTRUCTION_TYPE ins, unsigned correctAns, unsigned predAns) {
         ++totalCnt;
@@ -41,7 +41,7 @@ class Predictor {
         memset(targetAddress, 0, size * sizeof(unsigned));
     }
     ~Predictor() {
-        printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
+        // printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
         delete[] twoBitCounter;
         delete[] targetAddress;
     }
@@ -86,7 +86,7 @@ class Predictor {
         memset(targetAddress, 0, size * sizeof(unsigned));
     }
     ~Predictor() {
-        printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
+        // printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
         delete[] BHT;
         for (int i = 0; i < 16; ++i) delete[] PHTs[i];
         delete[] targetAddress;
@@ -136,7 +136,7 @@ class Predictor {
         memset(targetAddress, 0, size * sizeof(unsigned));
     }
     ~Predictor() {
-        printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
+        // printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
         for (int i = 0; i < 16; ++i) delete[] PHTs[i];
         delete[] targetAddress;
     }
@@ -193,7 +193,7 @@ class Predictor {
         memset(targetAddress, 0, size * sizeof(unsigned));
     }
     ~Predictor() {
-        printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
+        // printf("Branch prediction correct rate: %lf%%\n\n", double(correctCnt) / totalCnt * 100);
         delete[] callCnt;
         delete[] twoBitCounter;
         delete[] BHT;

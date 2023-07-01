@@ -114,7 +114,7 @@ class CPU {
             bubbling();
             forwarding();
         }
-        std::cout << "clock counter: " << clockCnt << std::endl;
+        // std::cout << "clock counter: " << clockCnt << std::endl;
         return gprs.getVal(10) & 255u;
     }
 
