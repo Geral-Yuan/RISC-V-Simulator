@@ -31,7 +31,7 @@ class CPU {
    public:
     // clang-format off
     explicit CPU(std::istream &is = std::cin)
-        : memory(is), gprs(), pc(0), nxt_pc(0), clockCnt(0), countDown(-1), newCountDown(-1), clearWrongBranch(false),
+        : memory(is), gprs(), predictor(12), pc(0), nxt_pc(0), clockCnt(0), countDown(-1), newCountDown(-1), clearWrongBranch(false),
           stallCnt(0), stallIF(false), stallID(false), stallEX(false), bubble(false),
           IF(memory, predictor, pc, nxt_pc, countDown, stallIF),
           ID(IF_ID, gprs, countDown, newCountDown, stallID),

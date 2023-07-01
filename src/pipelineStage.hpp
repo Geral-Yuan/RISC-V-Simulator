@@ -53,7 +53,7 @@ class IF_stage {
         buffer.legal = true;
         buffer.insAddr = pc;
         memory.read(pc, 4, buffer.insBits);
-        if (!nxt_pc) nxt_pc = buffer.predictPC = predictor.nxtPC(pc, buffer.insBits);
+        if (!nxt_pc) nxt_pc = buffer.predictPC = predictor.predictNextPC(pc, buffer.insBits);
     }
 };
 
@@ -164,6 +164,7 @@ class EX_stage {
                 correct_nxt_pc = (ID_EX.insClass == J_type ? ID_EX.insAddr + signedExtend_len(21, ID_EX.imm) : (ID_EX.regVal1 + signedExtend_len(12, ID_EX.imm)) & (-2));
                 buffer.exRes = ID_EX.insAddr + 4;
                 if (nxt_pc != correct_nxt_pc) {
+                    predictor.storeTargetAddress(ID_EX.insAddr, correct_nxt_pc);
                     nxt_pc = correct_nxt_pc;
                     clearWrongBranch = true;
                 }
@@ -191,6 +192,7 @@ class EX_stage {
                         jump = (ID_EX.regVal1 >= ID_EX.regVal2);
                         break;
                 }
+                predictor.storeTargetAddress(ID_EX.insAddr, ID_EX.insAddr + signedExtend_len(13, ID_EX.imm));
                 if (jump)
                     correct_nxt_pc = ID_EX.insAddr + signedExtend_len(13, ID_EX.imm);
                 else
